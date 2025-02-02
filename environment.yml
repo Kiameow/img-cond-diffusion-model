@@ -1,4 +1,4 @@
-name: miccai23_res
+name: anomaly_restoration
 channels:
   - conda-forge
   - defaults
