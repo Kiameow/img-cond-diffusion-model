@@ -40,6 +40,13 @@ class BaseDataset(Dataset, ABC):
                 img = (img - 0.5) * 2
 
             return torch.FloatTensor(img), torch.FloatTensor(mask)
+        
+    @abstractmethod
+    def __len__(self) -> int:
+        """
+        Return the length of the dataset. 
+        Must be implemented in subclasses.
+        """
 
 
 class GenericDataloader(DataLoader):

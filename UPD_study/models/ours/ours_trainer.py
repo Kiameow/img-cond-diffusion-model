@@ -24,11 +24,12 @@ from accelerate.logging import get_logger
 from accelerate.utils import ProjectConfiguration, set_seed
 
 import diffusers
-from diffusers import DDPMScheduler, UNet2DModel
+from diffusers.schedulers.scheduling_ddpm import DDPMScheduler
+from diffusers.models.unet_2d import UNet2DModel
 from diffusers.optimization import get_scheduler
 from diffusers.training_utils import EMAModel, compute_snr
-from diffusers.utils import check_min_version, is_wandb_available
-from diffusers.utils.import_utils import is_xformers_available
+from diffusers.utils import check_min_version
+from diffusers.utils.import_utils import is_xformers_available, is_wandb_available
 
 from UPD_study.utilities.common_data import BaseDataset
 from UPD_study.data.dataloaders.MRI import get_datasets_mri
@@ -40,8 +41,12 @@ from UPD_study.utilities.common_config import common_config
 from UPD_study.utilities.utils import misc_settings, ssim_map, str_to_bool, log
 from UPD_study.utilities.evaluate import evaluate
 
+from typing import (
+    Dict,
+    Any
+)
 
-if is_wandb_available():
+if is_wandb_available() and False:
     import wandb
 # Will error if the minimal version of diffusers is not installed. Remove at your own risks.
 check_min_version("0.22.0.dev0")
@@ -163,7 +168,7 @@ def log_validation(unet, scheduler, h_config, upd_config, accelerator, weight_dt
         generator = torch.Generator(
             device=accelerator.device).manual_seed(h_config.seed)
 
-    indices = torch.randint(0, len(val_dataset), (h_config.validation_samples,),
+    indices = torch.randint(0, len(val_dataset), size=(h_config.validation_samples,),
                             generator=generator, device=accelerator.device, dtype=torch.long)
 
     img_pairs = [val_dataset[i] for i in indices]
@@ -214,9 +219,13 @@ def log_validation(unet, scheduler, h_config, upd_config, accelerator, weight_dt
     images = rearrange(images, "b c h w -> h (b w) c")
 
     for tracker in accelerator.trackers:
-        if tracker.name == "wandb":
-            tracker.log({"validation": wandb.Image(
+        if tracker.name == "wandb" and False:
+            if is_wandb_available():
+                import wandb
+                tracker.log({"validation": wandb.Image(
                 images, caption="Top to bottom: Input, Restoration, Original, Anomaly Map, Input - Original")})
+            else:
+                logger.error("set tracker to wandb, but wandb is not available")
         else:
             logger.warning(f"image logging not implemented for {tracker.name}")
 
@@ -350,16 +359,21 @@ def init_setup() -> tuple[Namespace, DictConfig]:
     # The trackers initializes automatically on the main process.
     if accelerator.is_main_process:
         tracker_config = OmegaConf.to_container(h_config, resolve=True)
-        # tracker_config = dict(vars(tracker_config))
-        accelerator.init_trackers(
-            h_config.tracker_project_name,
-            tracker_config,
-            init_kwargs={
-                "wandb": {
-                    "group": experiment_name
+        
+        if isinstance(tracker_config, dict):
+            accelerator.init_trackers(
+                h_config.tracker_project_name,
+                tracker_config,
+                init_kwargs={
+                    "wandb": {
+                        "group": experiment_name
+                    },
                 },
-            },
-        )
+            )
+        else:
+            raise ValueError("Invalid config type, expected dict")
+        # tracker_config = dict(vars(tracker_config))
+        
 
     # Make one log on every process with the configuration for debugging.
     logging.basicConfig(
@@ -384,7 +398,7 @@ def init_setup() -> tuple[Namespace, DictConfig]:
         if h_config.output_dir is not None:
             os.makedirs(h_config.output_dir, exist_ok=True)
 
-    return upd_config, h_config
+    return upd_config, h_config # type: ignore
 
 
 def main():
@@ -401,7 +415,7 @@ def main():
         noise_scheduler.register_to_config(
             prediction_type=h_config.prediction_type)
     kwargs = OmegaConf.to_container(h_config.unet, resolve=True)
-    unet = UNet2DModel(**kwargs)
+    unet = UNet2DModel(**kwargs) # type: ignore
 
     # Set unet to trainable
     unet.train()
@@ -409,7 +423,7 @@ def main():
     # Create EMA for the unet.
     if h_config.use_ema:
         kwargs = OmegaConf.to_container(h_config.unet, resolve=True)
-        ema_unet = UNet2DModel(**kwargs)
+        ema_unet = UNet2DModel(**kwargs) # type: ignore
         ema_unet = EMAModel(ema_unet.parameters(),
                             model_cls=UNet2DModel, model_config=ema_unet.config)
 
@@ -439,7 +453,7 @@ def main():
         def save_model_hook(models, weights, output_dir):
             if accelerator.is_main_process:
                 if h_config.use_ema:
-                    ema_unet.save_pretrained(
+                    ema_unet.save_pretrained( # type: ignore
                         os.path.join(output_dir, "unet_ema"))
 
                 for model in models:
@@ -452,8 +466,8 @@ def main():
             if h_config.use_ema:
                 load_model = EMAModel.from_pretrained(
                     os.path.join(input_dir, "unet_ema"), UNet2DModel)
-                ema_unet.load_state_dict(load_model.state_dict())
-                ema_unet.to(accelerator.device)
+                ema_unet.load_state_dict(load_model.state_dict()) # type: ignore
+                ema_unet.to(accelerator.device) # type: ignore
                 del load_model
 
             for _ in range(len(models)):
@@ -463,9 +477,9 @@ def main():
                 # load diffusers style into model
                 load_model = UNet2DModel.from_pretrained(
                     input_dir, subfolder="unet")
-                model.register_to_config(**load_model.config)
+                model.register_to_config(**load_model.config) # type: ignore
 
-                model.load_state_dict(load_model.state_dict())
+                model.load_state_dict(load_model.state_dict()) # type: ignore
                 del load_model
 
         accelerator.register_save_state_pre_hook(save_model_hook)
@@ -477,7 +491,7 @@ def main():
     unet = accelerator.prepare(unet)
 
     if h_config.use_ema:
-        ema_unet.to(accelerator.device)
+        ema_unet.to(accelerator.device) # type: ignore
 
     # Enable TF32 for faster training on Ampere GPUs,
     # cf https://pytorch.org/docs/stable/notes/cuda.html#tensorfloat-32-tf32-on-ampere-devices
@@ -533,7 +547,7 @@ def main():
         # Initialize the optimizer
         if h_config.use_8bit_adam:
             try:
-                import bitsandbytes as bnb
+                import bitsandbytes as bnb # type: ignore
             except ImportError as exc:
                 raise ImportError(
                     "Please install bitsandbytes to use 8-bit Adam. You can do so by running `pip install bitsandbytes`"
@@ -558,7 +572,8 @@ def main():
 
         assert upd_config.modality in DSET_DICT, f'Unknown modality {upd_config.modality}'
         ext_blending_dsets = []
-        for dset_name in tqdm([k for k in DSET_DICT if k != upd_config.modality],
+        # change code here, turn k != upd... to k == upd
+        for dset_name in tqdm([k for k in DSET_DICT if k == upd_config.modality],
                               desc='Loading external blending datasets',
                               disable=not accelerator.is_main_process):
             ext_blending_dsets.append(DSET_DICT[dset_name](
@@ -576,7 +591,7 @@ def main():
         logger.info('Loading main dataset...')
         train_dataset, val_dataset = DSET_DICT[upd_config.modality](
             upd_config, train=True)
-        val_dataset.aug_fn = val_task
+        val_dataset.aug_fn = val_task # type: ignore
 
         logger.info('Main dataset loaded.')
 
@@ -629,7 +644,7 @@ def main():
         first_epoch = global_step // num_update_steps_per_epoch
 
         logger.info("***** Running training *****")
-        logger.info(f"  Num examples = {len(train_dataset)}")
+        logger.info(f"  Num examples = {len(train_dataset)}") # type: ignore
         logger.info(f"  Num Epochs = {h_config.num_train_epochs}")
         logger.info(
             f"  Instantaneous batch size per device = {h_config.train_batch_size}")
@@ -685,7 +700,7 @@ def main():
                 # Checks if the accelerator has performed an optimization step behind the scenes
                 if accelerator.sync_gradients:
                     if h_config.use_ema:
-                        ema_unet.step(unet.parameters())
+                        ema_unet.step(unet.parameters()) # type: ignore
                     progress_bar.update(1)
                     global_step += 1
                     accelerator.log(
@@ -730,15 +745,15 @@ def main():
 
                     if h_config.use_ema:
                         # Store the UNet parameters temporarily and load the EMA parameters to perform inference.
-                        ema_unet.store(unet.parameters())
-                        ema_unet.copy_to(unet.parameters())
+                        ema_unet.store(unet.parameters()) # type: ignore
+                        ema_unet.copy_to(unet.parameters()) # type: ignore
 
                     unet.eval()
 
                     if accelerator.is_main_process and log_val_img:
                         logger.info("Logging validation images...")
                         log_validation(unet, noise_scheduler, h_config, upd_config,
-                                       accelerator, weight_dtype, val_dataset)
+                                       accelerator, weight_dtype, val_dataset) # type: ignore
 
                     if log_val_loss:
                         logger.info("Computing validation loss...")
@@ -780,7 +795,7 @@ def main():
                     unet.train()
                     if h_config.use_ema:
                         # Switch back to the original UNet parameters.
-                        ema_unet.restore(unet.parameters())
+                        ema_unet.restore(unet.parameters()) # type: ignore
 
                 if global_step >= h_config.max_train_steps:
                     break
@@ -796,13 +811,13 @@ def main():
         else:
             eval_prefix = f"eval_mae_{test_dset_name}"
 
-        upd_config.eval_dir = path.with_name(f"{eval_prefix}_{path.stem}")
+        upd_config.eval_dir = path.with_name(f"{eval_prefix}_{path.stem}") # type: ignore
         logger.info(f"Saving evaluation results to {upd_config.eval_dir}")
 
         if h_config.use_ema:
             # Load EMA parameters for inference.
-            ema_unet.store(unet.parameters())
-            ema_unet.copy_to(unet.parameters())
+            ema_unet.store(unet.parameters()) # type: ignore
+            ema_unet.copy_to(unet.parameters()) # type: ignore
 
         unet.eval()
         upd_config.step = global_step
@@ -833,7 +848,7 @@ def main():
                 raise ValueError(f"Unknown sequence {upd_config.sequence}")
 
             log_test_examples(unet, noise_scheduler, h_config, upd_config,
-                           accelerator, weight_dtype, test_dset, indices)
+                           accelerator, weight_dtype, test_dset, indices) # type: ignore
         else:
             test_dataloader = DataLoader(
                 test_dset,
@@ -890,7 +905,7 @@ def compute_loss(h_config, noise_scheduler, unet, uncond_p, batch):
     # (this is the forward diffusion process)
     if h_config.input_perturbation:
         noisy_target = noise_scheduler.add_noise(
-            target, new_noise, timesteps)
+            target, new_noise, timesteps) # type: ignore
     else:
         noisy_target = noise_scheduler.add_noise(
             target, noise, timesteps)

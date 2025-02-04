@@ -20,7 +20,7 @@ INTENSITY_CHANGE = 4
 
 
 def get_task_split(fold: int, num_train_tasks: int) -> tuple[list[int], list[int]]:
-
+    # get num_train_tasks tasks as train batch, the rest as validation batch
     all_task_ids = list(range(NUM_TASKS))
 
     train_task_ids = list(combinations(all_task_ids, num_train_tasks))[fold]

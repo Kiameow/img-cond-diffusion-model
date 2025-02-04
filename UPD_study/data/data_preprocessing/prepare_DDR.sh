@@ -1,6 +1,6 @@
 # # Activate the virtual environment
 eval "$(conda shell.bash hook)"
-conda activate miccai23_res
+conda activate dl
 
 
 # gdown https://drive.google.com/uc?id=1_gmRXJ3Wc9lNScbAlC3Jt1zOwpFHfDgE

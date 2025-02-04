@@ -1,3 +1,13 @@
+import sys
+import os
+
+# 获取当前脚本的绝对路径
+current_dir = os.path.dirname(os.path.abspath(__file__))
+# 获取目标目录的绝对路径
+target_dir = os.path.abspath(os.path.join(current_dir, '../../../'))
+# 添加到 sys.path
+sys.path.append(target_dir)
+
 import argparse
 from glob import glob
 import os
@@ -13,7 +23,6 @@ from PIL import Image
 from UPD_study.data.data_preprocessing.registrators import MRIRegistrator
 from UPD_study.data.data_preprocessing.robex import strip_skull_ROBEX
 from UPD_study import ROOT
-
 
 class BraTSHandler():
     def __init__(self, args):
