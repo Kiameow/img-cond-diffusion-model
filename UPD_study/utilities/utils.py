@@ -20,7 +20,8 @@ from UPD_study.data.dataloaders.CXR import get_dataloaders_cxr
 from UPD_study.data.dataloaders.RF import get_dataloaders_rf
 from UPD_study.utilities.metrics import (
     compute_average_precision,
-    compute_auroc, compute_average_precision_and_optimal_dice
+    compute_auroc, compute_average_precision_and_optimal_dice,
+    calculate_psnr, calculate_ssim
 )
 
 
@@ -356,7 +357,7 @@ def ssim_map(batch1: Tensor, batch2: Tensor) -> torch.Tensor:
 
 
 def metrics(config: Namespace, anomaly_maps: list = None, segmentations: list = None,
-            anomaly_scores: list = None, labels: list = None, metric_prefix='') -> Union[None, float]:
+            anomaly_scores: list = None, labels: list = None, restored_imgs: list = None, input_imgs : list = None, metric_prefix='') -> Union[None, float]:
     """
     Computes evaluation metrics, prints and logs the results.
 
@@ -408,6 +409,23 @@ def metrics(config: Namespace, anomaly_maps: list = None, segmentations: list = 
             log({f'anom_val/{metric_prefix}pixel-ap': pixel_ap,
                  f'anom_val/{metric_prefix}best-dice': best_dice},
                 config)
+            
+        # reconstruction quality metrics
+    if restored_imgs is not None and input_imgs is not None:
+        restored_imgs = torch.cat(restored_imgs)
+        input_imgs = torch.cat(input_imgs)
+        
+        # Calculate SSIM
+        ssim = calculate_ssim(restored_imgs, input_imgs)
+        print(f"Structural Similarity Index (SSIM): {ssim:.4f}")
+        
+        # Calculate PSNR
+        psnr = calculate_psnr(restored_imgs, input_imgs)
+        print(f"Peak Signal-to-Noise Ratio (PSNR): {psnr:.4f} dB\n")
+        
+        # Log reconstruction metrics
+        log({f'anom_val/{metric_prefix}ssim': ssim,
+             f'anom_val/{metric_prefix}psnr': psnr}, config)
 
     print(f'Evaluation metrics computed in {time() - metric_start_time:.2f}s')
 
@@ -550,3 +568,6 @@ def memory():
     print('Total Memory:', t / 10**9, 'Reserved Memory:', r / 10**9,
           'Allocated Memory:', a / 10**9, 'Free Memory inside Reserved', f / 10**9)
     return
+
+
+

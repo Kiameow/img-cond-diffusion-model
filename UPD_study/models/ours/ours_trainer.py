@@ -10,6 +10,7 @@ import time
 
 from einops import rearrange
 from omegaconf import OmegaConf, DictConfig
+from UPD_study.data.dataloaders.OPMED import get_datasets_opmed
 from tqdm.auto import tqdm
 from packaging import version
 
@@ -56,7 +57,8 @@ logger = get_logger(__name__, log_level="INFO")
 DSET_DICT = {
     'MRI': get_datasets_mri,
     'CXR': get_datasets_cxr,
-    'RF': get_datasets_rf
+    'RF': get_datasets_rf,
+    'OPMED': get_datasets_opmed
     # TODO: add imagenet
 }
 
@@ -312,7 +314,7 @@ def parse_args():
     upd_config.model_dir_path = Path(__file__).parents[0]
     upd_config.ignore_wandb = True  # Disable benchmark wandb because use our own
     misc_settings(upd_config)
-    upd_config.using_accelerate = True
+    upd_config.using_accelerate = False
 
 
     h_config = OmegaConf.load(upd_config.h_config)

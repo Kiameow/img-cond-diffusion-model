@@ -29,6 +29,7 @@ def evaluate(config: Namespace, test_loader: DataLoader, val_step: Callable) -> 
     anomaly_maps = []
     inputs = []
     segmentations = []
+    restored_imgs = []
 
     # forward pass the testloader to extract anomaly maps, scores, masks, labels
     for input_imgs, mask in tqdm(test_loader, desc="Test set", disable=config.speed_benchmark):
@@ -37,14 +38,14 @@ def evaluate(config: Namespace, test_loader: DataLoader, val_step: Callable) -> 
 
         output = val_step(input_imgs, test_samples=True)
 
-        anomaly_map, anomaly_score = output[:2]
+        anomaly_map, anomaly_score, restored_img = output
 
         if config.using_accelerate:
             input_imgs, mask, anomaly_map, anomaly_score = \
                 config.accelerator.gather_for_metrics((input_imgs, mask, anomaly_map, anomaly_score))
 
-        batch_input_imgs, batch_masks, batch_anomaly_maps, batch_anomaly_scores = input_imgs.cpu(), \
-                mask.cpu(), anomaly_map.cpu(), anomaly_score.cpu()
+        batch_input_imgs, batch_masks, batch_anomaly_maps, batch_anomaly_scores, restored_imgs = input_imgs.cpu(), \
+                mask.cpu(), anomaly_map.cpu(), anomaly_score.cpu(), restored_img.cpu()
 
         inputs.append(batch_input_imgs)
 
@@ -55,6 +56,7 @@ def evaluate(config: Namespace, test_loader: DataLoader, val_step: Callable) -> 
             label = torch.where(batch_masks.sum(dim=(1, 2, 3)) > 0, 1, 0)
             labels.append(label)
             anomaly_scores.append(torch.zeros_like(label))
+            restored_imgs.append(restored_img)
         elif config.method == 'Cutpaste' and not config.localization:
             segmentations = None
             anomaly_scores.append(batch_anomaly_scores)
@@ -66,15 +68,14 @@ def evaluate(config: Namespace, test_loader: DataLoader, val_step: Callable) -> 
             anomaly_scores.append(batch_anomaly_scores)
             label = torch.where(batch_masks.sum(dim=(1, 2, 3)) > 0, 1, 0)
             labels.append(label)
+            restored_imgs.append(restored_img)
 
 
     metric_prefix = ''
     if config.modality == 'MRI' and config.sequence == 't1':
         metric_prefix = ('brats' if config.brats_t1 else 'atlas') + '/'
-
-
-    if not config.using_accelerate or config.accelerator.is_main_process:
-        metrics(config, anomaly_maps, segmentations, anomaly_scores, labels, metric_prefix)
+    
+    metrics(config, anomaly_maps, segmentations, anomaly_scores, labels, restored_imgs, inputs, metric_prefix)
 
     if config.eval_dir is not None:
         config.eval_dir.mkdir(parents=True, exist_ok=True)
