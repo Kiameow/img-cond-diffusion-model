@@ -32,11 +32,11 @@ def get_files(config: Namespace, train: bool = True) -> Union[List, Tuple[List, 
     """
 
     norm_paths = sorted(
-        glob(os.path.join(config.datasets_dir, 'MRI', 'OPMED', 'hc_FLAIR', '*.png')))
+        glob(os.path.join(config.datasets_dir, 'OPMED', 'hc_FLAIR', '*.png')))
     anom_paths = sorted(glob(os.path.join(config.datasets_dir,
-                                          'MRI', 'OPMED', 'uh_FLAIR', '*.png')))
+                                        'OPMED', 'uh_FLAIR', '*.png')))
 
-    segmentations = sorted(glob(os.path.join(config.datasets_dir, 'MRI', 'OPMED', 'mask', '*.png')))
+    segmentations = sorted(glob(os.path.join(config.datasets_dir, 'OPMED', 'masks', '*.png')))
     if train:
         return norm_paths
     else:
@@ -57,7 +57,7 @@ class ImageLoader:
         return image.numpy()
 
 class ResizeWithPadding:
-    def __init__(self, target_size=256):
+    def __init__(self, target_size=128):
         self.target_size = target_size
 
     def __call__(self, image):
@@ -105,7 +105,7 @@ class NormalDataset(BaseDataset):
 
         self.files = files
         self.transforms = T.Compose([
-                 ResizeWithPadding(config.img_size),
+                 ResizeWithPadding(config.image_size),
                  T.ToTensor(),
                 ])
 

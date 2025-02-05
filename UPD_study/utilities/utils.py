@@ -4,6 +4,7 @@ import random
 from time import time
 from typing import Union, Tuple, Dict, Callable
 
+from UPD_study.data.dataloaders.OPMED import get_dataloaders_opmed
 import numpy as np
 import torch
 from torch import Tensor
@@ -504,6 +505,8 @@ def load_data(config: Namespace) -> Tuple[DataLoader, ...]:
         get_dataloaders = get_dataloaders_cxr
     elif config.modality == 'RF':
         get_dataloaders = get_dataloaders_rf
+    elif config.modality == 'OPMED':
+        get_dataloaders = get_dataloaders_opmed
     else:
         raise NotImplementedError(f'No dataloader for {config.modality} implemented.')
 

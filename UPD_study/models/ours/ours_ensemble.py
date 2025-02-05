@@ -49,7 +49,7 @@ class ResultsEnsemble:
         anomaly_maps = self.ensemble_anomaly_maps[self.next_index: self.next_index + num_samples].to(input_imgs.device)
         anomaly_scores = self.ensemble_anomaly_scores[self.next_index: self.next_index + num_samples].to(input_imgs.device)
 
-        if self.upd_config.zero_bg_pred and self.upd_config.modality == 'MRI':
+        if self.upd_config.zero_bg_pred and (self.upd_config.modality == 'MRI' or self.upd_config.modality == 'OPMED'):
             # Zero out the background
             anomaly_maps = anomaly_maps * (input_imgs > input_imgs.amin(dim=list(range(input_imgs.ndim - 1)), keepdim=True))
 

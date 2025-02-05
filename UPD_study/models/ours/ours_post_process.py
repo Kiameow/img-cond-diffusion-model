@@ -26,7 +26,7 @@ class ResultsLoader:
         curr_anomaly_maps = self.anomaly_maps[self.next_index: self.next_index + num_samples].to(input_imgs.device)
         curr_anomaly_scores = self.anomaly_scores[self.next_index: self.next_index + num_samples].to(input_imgs.device)
 
-        if self.upd_config.zero_bg_pred and self.upd_config.modality == 'MRI':
+        if self.upd_config.zero_bg_pred and (self.upd_config.modality == 'MRI' or self.upd_config.modality == 'OPMED'):
             # Zero out the background
             curr_anomaly_maps = curr_anomaly_maps * (input_imgs > input_imgs.amin(dim=list(range(input_imgs.ndim - 1)), keepdim=True))
 
@@ -62,7 +62,7 @@ def main():
 
     results_folder = fold_results_folders[0]
 
-    if upd_config.zero_bg_pred and upd_config.modality == 'MRI':
+    if upd_config.zero_bg_pred and (upd_config.modality == 'MRI' or upd_config.modality == 'OPMED'):
         eval_prefix += '_zero_bg'
     upd_config.eval_dir = model_folder.with_name(f"{eval_prefix}_{model_folder.stem}")
 

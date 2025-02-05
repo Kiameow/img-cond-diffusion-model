@@ -137,7 +137,7 @@ def anom_inference(unet, scheduler, h_config, upd_config, accelerator, weight_dt
             (diffusion_output - input_imgs).abs().mean(1, keepdim=True)
         )
 
-    if upd_config.zero_bg_pred and upd_config.modality == 'MRI':
+    if upd_config.zero_bg_pred and (upd_config.modality == 'MRI' or upd_config.modality == 'OPMED'):
         # Zero out the background
         anomaly_map = anomaly_map * (input_imgs > input_imgs.amin(dim=list(range(input_imgs.ndim - 1)), keepdim=True))
 
