@@ -9,8 +9,8 @@ from tqdm import tqdm
 from UPD_study.utilities.utils import metrics, log
 
 
-def get_result_files(eval_dir: Path) -> tuple[Path, Path]:
-    return eval_dir / 'anomaly_maps.pt', eval_dir / 'anomaly_scores.pt'
+def get_result_files(eval_dir: Path) -> tuple[Path, Path, Path]:
+    return eval_dir / 'anomaly_maps.pt', eval_dir / 'anomaly_scores.pt', eval_dir / 'restored_imgs.pt'
 
 
 def evaluate(config: Namespace, test_loader: DataLoader, val_step: Callable) -> None:
@@ -44,7 +44,7 @@ def evaluate(config: Namespace, test_loader: DataLoader, val_step: Callable) -> 
             input_imgs, mask, anomaly_map, anomaly_score = \
                 config.accelerator.gather_for_metrics((input_imgs, mask, anomaly_map, anomaly_score))
 
-        batch_input_imgs, batch_masks, batch_anomaly_maps, batch_anomaly_scores, restored_imgs = input_imgs.cpu(), \
+        batch_input_imgs, batch_masks, batch_anomaly_maps, batch_anomaly_scores, batch_restored_imgs = input_imgs.cpu(), \
                 mask.cpu(), anomaly_map.cpu(), anomaly_score.cpu(), restored_img.cpu()
 
         inputs.append(batch_input_imgs)
@@ -56,7 +56,7 @@ def evaluate(config: Namespace, test_loader: DataLoader, val_step: Callable) -> 
             label = torch.where(batch_masks.sum(dim=(1, 2, 3)) > 0, 1, 0)
             labels.append(label)
             anomaly_scores.append(torch.zeros_like(label))
-            restored_imgs.append(restored_img)
+            restored_imgs.append(batch_restored_imgs)
         elif config.method == 'Cutpaste' and not config.localization:
             segmentations = None
             anomaly_scores.append(batch_anomaly_scores)
@@ -68,7 +68,7 @@ def evaluate(config: Namespace, test_loader: DataLoader, val_step: Callable) -> 
             anomaly_scores.append(batch_anomaly_scores)
             label = torch.where(batch_masks.sum(dim=(1, 2, 3)) > 0, 1, 0)
             labels.append(label)
-            restored_imgs.append(restored_img)
+            restored_imgs.append(batch_restored_imgs)
 
 
     metric_prefix = ''
@@ -79,9 +79,10 @@ def evaluate(config: Namespace, test_loader: DataLoader, val_step: Callable) -> 
 
     if config.eval_dir is not None:
         config.eval_dir.mkdir(parents=True, exist_ok=True)
-        anomaly_maps_file, anomaly_scores_file = get_result_files(config.eval_dir)
+        anomaly_maps_file, anomaly_scores_file, restored_imgs_file = get_result_files(config.eval_dir)
         torch.save(torch.cat(anomaly_maps), anomaly_maps_file)
         torch.save(torch.cat(anomaly_scores), anomaly_scores_file)
+        torch.save(torch.cat(restored_imgs), restored_imgs_file)
         # For debugging purposes, save the labels to check ordering is the same
         torch.save(torch.cat(labels), anomaly_scores_file.with_stem('labels'))
 
