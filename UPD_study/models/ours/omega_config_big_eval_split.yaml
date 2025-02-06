@@ -88,8 +88,8 @@ mixed_precision: "fp16"
 enable_xformers_memory_efficient_attention: false # does not work
 
 # logging
-report_to: wandb
-tracker_project_name: hf-video-diffusion # wandb project name
+report_to: none
+tracker_project_name: none # wandb project name
 group: cond_generation # for wandb, will group runs per experiment name
 
 # checkpointing
