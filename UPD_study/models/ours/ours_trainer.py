@@ -363,15 +363,16 @@ def init_setup() -> tuple[Namespace, DictConfig]:
         tracker_config = OmegaConf.to_container(h_config, resolve=True)
         
         if isinstance(tracker_config, dict):
-            accelerator.init_trackers(
-                h_config.tracker_project_name,
-                tracker_config,
-                init_kwargs={
-                    "wandb": {
-                        "group": experiment_name
-                    },
-                },
-            )
+            pass
+            # accelerator.init_trackers(
+            #     h_config.tracker_project_name,
+            #     tracker_config,
+            #     init_kwargs={
+            #         "wandb": {
+            #             "group": experiment_name
+            #         },
+            #     },
+            # )
         else:
             raise ValueError("Invalid config type, expected dict")
         # tracker_config = dict(vars(tracker_config))
