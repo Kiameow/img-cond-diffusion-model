@@ -22,7 +22,8 @@ from UPD_study.data.dataloaders.RF import get_dataloaders_rf
 from UPD_study.utilities.metrics import (
     compute_average_precision,
     compute_auroc, compute_average_precision_and_optimal_dice,
-    calculate_psnr, calculate_ssim
+    compute_psnr,
+    compute_ssim
 )
 
 
@@ -413,15 +414,13 @@ def metrics(config: Namespace, anomaly_maps: list = None, segmentations: list = 
             
         # reconstruction quality metrics
     if restored_imgs is not None and input_imgs is not None:
-        restored_imgs = torch.cat(restored_imgs)
-        input_imgs = torch.cat(input_imgs)
         
         # Calculate SSIM
-        ssim = calculate_ssim(restored_imgs, input_imgs)
+        ssim = compute_ssim(restored_imgs, input_imgs)
         print(f"Structural Similarity Index (SSIM): {ssim:.4f}")
         
         # Calculate PSNR
-        psnr = calculate_psnr(restored_imgs, input_imgs)
+        psnr = compute_psnr(restored_imgs, input_imgs)
         print(f"Peak Signal-to-Noise Ratio (PSNR): {psnr:.4f} dB\n")
         
         # Log reconstruction metrics
