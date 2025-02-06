@@ -329,7 +329,7 @@ def misc_settings(config: Namespace) -> None:
     if not hasattr(config, 'aug_fn'):
         config.aug_fn = None
 
-    config.eval_dir = None
+    config.eval_dir = 'evaluation'
     config.using_accelerate = False
 
 
