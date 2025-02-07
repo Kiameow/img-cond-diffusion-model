@@ -221,7 +221,7 @@ def log_validation(unet, scheduler, h_config, upd_config, accelerator, weight_dt
     images = rearrange(images, "b c h w -> h (b w) c")
 
     for tracker in accelerator.trackers:
-        if tracker.name == "wandb" and False:
+        if tracker.name == "wandb":
             if is_wandb_available():
                 import wandb
                 tracker.log({"validation": wandb.Image(

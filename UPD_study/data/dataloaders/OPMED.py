@@ -157,12 +157,12 @@ class AnomalDataset(Dataset):
         self.image_size = config.image_size
 
         self.image_transforms = T.Compose([
-                 ResizeWithPadding(config.img_size),
+                 ResizeWithPadding(config.image_size),
                  T.ToTensor(),
                 ])
 
         self.mask_transforms = T.Compose([
-                 ResizeWithPadding(config.img_size),
+                 ResizeWithPadding(config.image_size),
                  T.ToTensor(),
                 ])
 

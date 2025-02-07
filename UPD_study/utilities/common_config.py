@@ -22,7 +22,7 @@ def common_config(parser):
     parser.add_argument('--load_pretrained', '-lp', type=str_to_bool, default=False,
                         help='Load encoder pretrained with CCD')
     parser.add_argument('--disable_wandb', '-dw', type=str_to_bool,
-                        default=False, help='disable wandb logging')
+                        default=True, help='disable wandb logging')
     parser.add_argument('--eval', '-ev', type=str_to_bool, default=False, help='Evaluation mode')
     parser.add_argument('--no_dice', type=str_to_bool, default=False,
                         help='do not calculate dice (used to save inference time)')

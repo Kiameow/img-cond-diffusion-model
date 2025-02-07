@@ -133,12 +133,12 @@ def get_datasets_mri(config: Namespace,
         elif config.sequence == 't2':
             slices, segmentations = get_brats_slices(config)
 
-        split_idx = int(len(slices) * config.anomal_split)
+        split_idx = int(len(slices) * config.anomal_split) # type: ignore
 
-        slices_big = np.concatenate(slices[:split_idx], axis=0)
-        slices_small = np.concatenate(slices[split_idx:], axis=0)
-        seg_big = np.concatenate(segmentations[:split_idx], axis=0)
-        seg_small = np.concatenate(segmentations[split_idx:], axis=0)
+        slices_big = np.concatenate(slices[:split_idx], axis=0) # type: ignore
+        slices_small = np.concatenate(slices[split_idx:], axis=0) # type: ignore
+        seg_big = np.concatenate(segmentations[:split_idx], axis=0) # type: ignore
+        seg_small = np.concatenate(segmentations[split_idx:], axis=0) # type: ignore
 
         # keep slices with brain pixels in them
         non_zero_idx_s = np.sum(slices_small, axis=(1, 2, 3)) > 0
@@ -155,7 +155,7 @@ def get_datasets_mri(config: Namespace,
         big = AnomalDataset([slices_big, seg_big], config)
         small = AnomalDataset([slices_small, seg_small], config)
 
-        del slices, segmentations, slices_small, seg_small
+        del slices, segmentations, slices_small, seg_small # type: ignore
 
         return big, small
 
