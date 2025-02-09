@@ -2,7 +2,7 @@
 dataset:
   something: 0
 dataloader_num_workers: 8
-train_batch_size: 16
+train_batch_size: 8
 
 # Model settings: https://huggingface.co/docs/diffusers/api/models/unet2d
 unet:
@@ -88,7 +88,7 @@ mixed_precision: "fp16"
 enable_xformers_memory_efficient_attention: false # does not work
 
 # logging
-report_to: tensorboard
+report_to: wandb
 tracker_project_name: hf-video-diffusion # wandb project name
 group: cond_generation # for wandb, will group runs per experiment name
 
