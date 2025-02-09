@@ -38,13 +38,13 @@ def get_files(config: Namespace, train: bool = True) -> Union[List, Tuple[List, 
 
     segmentations = sorted(glob(os.path.join(config.datasets_dir, 'OPMED', 'masks', '*.png')))
     if train:
-        return norm_paths
+        return norm_paths[:-len(anom_paths)]
     else:
         # In  the Dataset class bellow, 12 positive samples get a completely blank
         # segmentation due to downsampling. These are effectively negative samples and
         # considered such during the evaluation. Due to that, we return 733 normal
         # samples, so that end up with effectively 745 positive and 745 negative samples
-        return norm_paths, anom_paths, [0] * len(norm_paths), [1] * len(anom_paths), segmentations
+        return norm_paths[len(norm_paths)-len(anom_paths):], anom_paths, [0] * (len(norm_paths)-len(anom_paths)), [1] * len(anom_paths), segmentations
 
 
 class ImageLoader:
@@ -175,6 +175,7 @@ class AnomalDataset(Dataset):
         :return: The loaded image and the binary segmentation mask.
         """
 
+        file_path = self.images[idx]
         image = Image.open(self.images[idx])
 
         image = self.image_transforms(image)
@@ -189,7 +190,7 @@ class AnomalDataset(Dataset):
             segmentation = Image.open(self.segmentations[idx])
             segmentation = self.mask_transforms(segmentation)
 
-        return image, segmentation
+        return image, segmentation, file_path
 
 
 def get_datasets_opmed(config: Namespace,

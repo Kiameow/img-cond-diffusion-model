@@ -128,28 +128,9 @@ def anom_inference(unet, scheduler, h_config, upd_config, accelerator, weight_dt
 
     # Noise is now a batch of fully sampled images, matching normalisation/format of input
     diffusion_output = noise
-
-    # Anomaly map
-    if upd_config.ssim_eval:
-        anomaly_map = ssim_map(diffusion_output, input_imgs)
-    else:
-        anomaly_map = (
-            (diffusion_output - input_imgs).abs().mean(1, keepdim=True)
-        )
-
-    if upd_config.zero_bg_pred and (upd_config.modality == 'MRI' or upd_config.modality == 'OPMED'):
-        # Zero out the background
-        anomaly_map = anomaly_map * (input_imgs > input_imgs.amin(dim=list(range(input_imgs.ndim - 1)), keepdim=True))
-
-    # TODO: is this a good aggregation
-    anomaly_score = anomaly_map.mean(dim=(1, 2, 3))
-
-    # Uncenter images for visualisation if necessary
-    if upd_config.center:
-        diffusion_output = diffusion_output / 2 + 0.5
     restored_imgs = diffusion_output.clamp(0, 1)
 
-    return anomaly_map, anomaly_score, restored_imgs
+    return restored_imgs
 
 
 def gen_anomaly_inference_function(unet, scheduler, h_config, upd_config, accelerator, weight_dtype):
