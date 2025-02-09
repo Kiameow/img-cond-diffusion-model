@@ -37,6 +37,8 @@ def get_files(config: Namespace, train: bool = True) -> Union[List, Tuple[List, 
                                         'OPMED', 'uh_FLAIR', '*.png')))
 
     segmentations = sorted(glob(os.path.join(config.datasets_dir, 'OPMED', 'masks', '*.png')))
+    
+    print(anom_paths[0])
     if train:
         return norm_paths[:-len(anom_paths)]
     else:
@@ -212,28 +214,8 @@ def get_datasets_opmed(config: Namespace,
         # get list of image paths
         trainfiles = get_files(config, train)
 
-        # percentage experiment: keep a specific percentage of the train files, or a single image.
-        # for seed != 10 (stadard seed), take them from the back of the list
-        if config.percentage != 100:
-            if config.percentage == -1:  # single img scenario
-                if config.seed == 10:
-                    trainfiles = [trainfiles[0]] * 500
-                else:
-                    trainfiles = [trainfiles[-1]] * 500
-
-            else:
-                if config.seed == 10:
-                    trainfiles = trainfiles[:int(len(trainfiles) * (config.percentage / 100))]
-                else:
-                    trainfiles = trainfiles[-int(len(trainfiles) * (config.percentage / 100)):]
-                if len(trainfiles) < config.batch_size:
-                    print(
-                        f'Number of train samples ({len(trainfiles)})',
-                        f' lower than batch size ({config.batch_size}). Repeating trainfiles 10 times.')
-                    trainfiles = trainfiles * 10
-
         # calculate dataset split index
-        split_idx = int(len(trainfiles) * config.normal_split)
+        split_idx = int(len(trainfiles) * 0.8)
 
         trainset = NormalDataset(trainfiles[:split_idx], config)
         valset = NormalDataset(trainfiles[split_idx:], config)
@@ -244,25 +226,16 @@ def get_datasets_opmed(config: Namespace,
         # get list of img and mask paths
         normal, anomal, labels_normal, labels_anomal, segmentations = get_files(config, train)
 
-        # calculate split indices
-        split_idx = int(len(normal) * config.anomal_split)
-        split_idx_anomal = int(len(anomal) * config.anomal_split)
 
-        big = AnomalDataset(normal[:split_idx],
-                            anomal[:split_idx_anomal],
-                            labels_normal[:split_idx],
-                            labels_anomal[:split_idx_anomal],
-                            segmentations[:split_idx_anomal],
+        big = AnomalDataset(normal,
+                            anomal,
+                            labels_normal,
+                            labels_anomal,
+                            segmentations,
                             config)
 
-        small = AnomalDataset(normal[split_idx:],
-                              anomal[split_idx_anomal:],
-                              labels_normal[split_idx:],
-                              labels_anomal[split_idx_anomal:],
-                              segmentations[split_idx_anomal:],
-                              config)
 
-        return big, small
+        return big, None
 
 
 def get_dataloaders_opmed(config: Namespace, train: bool = True) -> Tuple[DataLoader, DataLoader]:
