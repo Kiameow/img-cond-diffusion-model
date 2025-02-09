@@ -2,7 +2,7 @@
 dataset:
   something: 0
 dataloader_num_workers: 8
-train_batch_size: 8
+train_batch_size: 1
 
 # Model settings: https://huggingface.co/docs/diffusers/api/models/unet2d
 unet:
