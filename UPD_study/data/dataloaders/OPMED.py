@@ -34,7 +34,7 @@ def get_files(config: Namespace, train: bool = True) -> Union[List, Tuple[List, 
     norm_paths = sorted(
         glob(os.path.join(config.datasets_dir, 'OPMED', 'hc_FLAIR', '*.png')))
     anom_paths = sorted(glob(os.path.join(config.datasets_dir,
-                                        'OPMED', 'uh_FLAIR', '*.png')))
+                                        'OPMED', 'un_FLAIR', '*.png')))
 
     segmentations = sorted(glob(os.path.join(config.datasets_dir, 'OPMED', 'masks', '*.png')))
     
