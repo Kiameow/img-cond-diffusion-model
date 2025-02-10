@@ -313,7 +313,7 @@ def main():
     accelerator = upd_config.accelerator
 
     # Load scheduler, tokenizer and models.
-    noise_scheduler = DDPMScheduler()
+    noise_scheduler = DDPMScheduler(num_train_timesteps=3000)
     # Get the target for loss depending on the prediction type
     if h_config.prediction_type is not None:
         # set prediction_type of scheduler if defined
