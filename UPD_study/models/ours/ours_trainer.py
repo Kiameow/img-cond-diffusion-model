@@ -91,7 +91,7 @@ def anom_inference(unet, scheduler, h_config, upd_config, accelerator, weight_dt
 
     scheduler.set_timesteps(h_config.validation_timesteps)
     timesteps = scheduler.timesteps
-
+    print("start eval")
     unet.eval()
     noise = torch.randn_like(
         input_imgs, device=accelerator.device, dtype=weight_dtype)  # B x C x H x W
