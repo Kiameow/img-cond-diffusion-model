@@ -84,7 +84,18 @@ def evaluate(config: Namespace, test_loader: DataLoader, val_step: Callable) -> 
             print(f"{filename}")
 
             metrics = calculate_metrics(original_img.cpu(), msk.cpu(), recon_img, label)
-            all_metrics.append({'idx': idx, 'filename': filename, **metrics})
+            metrics_converted = {}
+            for key, value in metrics.items():
+                if isinstance(value, torch.Tensor):
+                    # Convert to float if it's a single-value tensor
+                    if value.numel() == 1:
+                        metrics_converted[key] = value.item()
+                    # Convert to list if it's a multi-value tensor
+                    else:
+                        metrics_converted[key] = value.tolist()
+                else:
+                    metrics_converted[key] = value
+            all_metrics.append({'idx': idx, 'filename': filename, **metrics_converted})
             save_sample(batch_idx * len(input_imgs) + idx, original_img.cpu(), msk.cpu(), recon_img, diff, filename)
 
 
