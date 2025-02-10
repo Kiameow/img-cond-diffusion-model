@@ -213,6 +213,8 @@ def eval_dice(origin: torch.Tensor, recon: torch.Tensor, mask: torch.Tensor) -> 
         - Dice measures overlap; ranges from `0` (no overlap) to `1` (perfect match).
     """
     pred_mask = get_pred_mask(origin, recon)
+    pred_mask = (pred_mask > 0.5).to(torch.int)  # 二值化并转换为整数类型
+    mask = (mask > 0.5).to(torch.int)  # 二值化并转换为整数类型
     
     intersection = torch.sum(pred_mask & mask)
     total = torch.sum(pred_mask) + torch.sum(mask)
@@ -230,7 +232,9 @@ def eval_IOU(origin: torch.Tensor, recon: torch.Tensor, mask: torch.Tensor) -> t
         - IoU ranges from `0` (no overlap) to `1` (identical masks).
     """
     pred_mask = get_pred_mask(origin, recon)
-    
+    pred_mask = (pred_mask > 0.5).to(torch.int)  # 二值化并转换为整数类型
+    mask = (mask > 0.5).to(torch.int)  # 二值化并转换为整数类型
+
     intersection = torch.sum(pred_mask & mask)
     union = torch.sum(pred_mask | mask)
     
