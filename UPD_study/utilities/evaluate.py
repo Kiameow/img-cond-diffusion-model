@@ -78,6 +78,8 @@ def evaluate(config: Namespace, test_loader: DataLoader, val_step: Callable) -> 
             filepath = Path(filepath)
             filename = filepath.name
             diff = get_pred_mask(original_img, recon_img)
+            diff = diff.float()
+            diff = (diff - diff.min()) / (diff.max() - diff.min())
             
             print(f"{filename}")
 
