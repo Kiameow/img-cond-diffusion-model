@@ -69,6 +69,7 @@ def evaluate(config: Namespace, test_loader: DataLoader, val_step: Callable) -> 
             input_imgs = input_imgs.to(config.device)
 
         recon_imgs = val_step(input_imgs, test_samples=True).cpu()
+        input_imgs = input_imgs.cpu()
 
         for idx, (original_img, msk, recon_img, filepath) in enumerate(zip(input_imgs, mask, recon_imgs, filepaths)):
             print(idx)
