@@ -64,20 +64,21 @@ def evaluate(config: Namespace, test_loader: DataLoader, val_step: Callable) -> 
 
     # Iterate over each batch in the test_loader
     for batch_idx, (input_imgs, mask, filepaths) in enumerate(tqdm(test_loader, desc="Evaluating")):
+        print(f"Batch {batch_idx}")
         if not config.using_accelerate:
             input_imgs = input_imgs.to(config.device)
 
         recon_imgs = val_step(input_imgs, test_samples=True).cpu()
 
         for idx, (original_img, msk, recon_img, filepath) in enumerate(zip(input_imgs, mask, recon_imgs, filepaths)):
-            
+            print(idx)
             label = torch.any(msk > 0).item()
             labels.append(label)
             filepath = Path(filepath)
             filename = filepath.name
             diff = get_pred_mask(original_img, recon_img)
             
-            print(f"{idx} {filename}")
+            print(f"{filename}")
 
             metrics = calculate_metrics(original_img.cpu(), msk.cpu(), recon_img, label)
             all_metrics.append({'idx': idx, 'filename': filename, **metrics})
