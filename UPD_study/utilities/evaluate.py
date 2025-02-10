@@ -107,12 +107,12 @@ def get_pred_mask(origin: torch.Tensor, recon: torch.Tensor) -> torch.Tensor:
     # Compute absolute difference between original and reconstructed images
     diff = torch.abs(origin - recon)
     
-    # Compute mean and std of the difference
+    # # Compute mean and std of the difference
     mean = torch.mean(diff)
     std = torch.std(diff)
     
     # Define threshold as mean + 2*std (can be adjusted based on needs)
-    threshold = mean + 2 * std
+    threshold = max(mean + 2 * std, 0.1)
     
     # Generate binary mask where True indicates potential anomalies
     mask = diff > threshold
