@@ -26,7 +26,7 @@ def evaluate(config: Namespace, test_loader: DataLoader, val_step: Callable) -> 
         test_loader (DataLoader): evaluation set dataloader
         val_step (Callable): validation step function
     """
-
+    print("########Start Evaluation#########")
     # Prepare directories for saving images with masks
     samples_dir = Path(config.eval_dir) / f"sample{config.fold}"
     samples_dir.mkdir(parents=True, exist_ok=True)

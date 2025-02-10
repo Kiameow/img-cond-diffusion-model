@@ -751,6 +751,7 @@ def main():
             log_test_examples(unet, noise_scheduler, h_config, upd_config,
                            accelerator, weight_dtype, test_dset, indices) # type: ignore
         else:
+            print("Loading Test Data")
             test_dataloader = DataLoader(
                 test_dset,
                 shuffle=False,
