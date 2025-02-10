@@ -101,7 +101,7 @@ checkpoints_total_limit: 2
 # Validation settings
 validation_samples: 8
 validation_batch_size: 1
-validation_timesteps: 100
+validation_timesteps: 200
 validation_guidance: 0.
 validation_img_steps: 5000
 validation_loss_steps: 500
