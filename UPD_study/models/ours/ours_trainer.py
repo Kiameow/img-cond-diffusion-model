@@ -139,84 +139,6 @@ def gen_anomaly_inference_function(unet, scheduler, h_config, upd_config, accele
     return configured_anom_inference
 
 
-def log_validation(unet, scheduler, h_config, upd_config, accelerator, weight_dtype, val_dataset: BaseDataset):
-    unet = accelerator.unwrap_model(unet)
-
-    if h_config.enable_xformers_memory_efficient_attention:
-        unet.enable_xformers_memory_efficient_attention()
-
-    if h_config.seed is None:
-        generator = None
-    else:
-        generator = torch.Generator(
-            device=accelerator.device).manual_seed(h_config.seed)
-
-    indices = torch.randint(0, len(val_dataset), size=(h_config.validation_samples,),
-                            generator=generator, device=accelerator.device, dtype=torch.long)
-
-    img_pairs = [val_dataset[i] for i in indices]
-    conditionals = [p[0] for p in img_pairs]
-    targets = [p[1] for p in img_pairs]
-    if h_config.get("uncond_p", 0.1) > 0:
-        #  add a blank image to check the unconditional generation capability of the model
-        conditionals.append(torch.zeros_like(conditionals[0]))
-        targets.append(torch.zeros_like(targets[0]))
-
-    conditionals = torch.stack(conditionals, dim=0).to(
-        accelerator.device)  # B x C x H x W
-    targets = torch.stack(targets, dim=0).to(
-        accelerator.device)  # B x C x H x W
-
-    aug_diff = (targets - conditionals).pow(2).mean(dim=1, keepdim=True)
-
-    start = time.time()
-    # B x C x H x W, intensity range should match that of conditional
-    anom_maps, _, restored_imgs = anom_inference(
-        unet, scheduler, h_config, upd_config, accelerator, weight_dtype, conditionals)
-    logger.info(
-        f"Generating validation examples took {time.time() - start:.2f} seconds")
-
-    if val_dataset.center:
-        conditionals = conditionals / 2 + 0.5
-        # Restorted images are already uncentered
-        targets = targets / 2 + 0.5
-
-    # Scale anomaly maps for visualisation
-    anom_maps /= anom_maps.max()
-
-    if conditionals.shape[1] != anom_maps.shape[1]:
-        assert anom_maps.shape[1] == 1
-        assert aug_diff.shape[1] == 1
-        anom_maps = anom_maps.repeat(1, conditionals.shape[1], 1, 1)
-        aug_diff = aug_diff.repeat(1, conditionals.shape[1], 1, 1)
-
-    # concat with conditionals
-    images = torch.cat([conditionals, restored_imgs, targets,
-                       anom_maps, aug_diff], dim=2)  #  vertical concat
-
-    images = images.clamp(0, 1)
-    images = (images * 255).to(torch.uint8)
-
-    images = images.cpu().numpy()
-    # horizontal concat for display
-    images = rearrange(images, "b c h w -> h (b w) c")
-
-    for tracker in accelerator.trackers:
-        if tracker.name == "wandb":
-            if is_wandb_available():
-                import wandb
-                tracker.log({"validation": wandb.Image(
-                images, caption="Top to bottom: Input, Restoration, Original, Anomaly Map, Input - Original")})
-            else:
-                logger.error("set tracker to wandb, but wandb is not available")
-        else:
-            logger.warning(f"image logging not implemented for {tracker.name}")
-
-    torch.cuda.empty_cache()
-
-    return images
-
-
 def log_test_examples(unet, scheduler, h_config, upd_config, accelerator, weight_dtype, val_dataset: BaseDataset, indices=None):
     unet = accelerator.unwrap_model(unet)
     assert upd_config.eval_dir is not None
@@ -733,10 +655,6 @@ def main():
 
                     unet.eval()
 
-                    if accelerator.is_main_process and log_val_img:
-                        logger.info("Logging validation images...")
-                        log_validation(unet, noise_scheduler, h_config, upd_config,
-                                       accelerator, weight_dtype, val_dataset) # type: ignore
 
                     if log_val_loss:
                         logger.info("Computing validation loss...")
