@@ -64,7 +64,7 @@ gradient_accumulation_steps: 1
 gradient_checkpointing: false
 
 use_ema: true
-resume_from_checkpoint: best
+resume_from_checkpoint: latest
 seed: 42
 
 # optimizer
